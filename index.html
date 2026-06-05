@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apoptose — A Morte Programada da Célula</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & TOKENS ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --deep:    #080f18;
+  --dark:    #0d1822;
+  --mid:     #102034;
+  --panel:   #0e1e30;
+  --card:    #0a1726;
+  --teal:    #0ececa;
+  --teal2:   #5ef0ec;
+  --teal3:   rgba(14,206,202,.12);
+  --amber:   #f5a623;
+  --coral:   #ff4d6d;
+  --sage:    #2ee89a;
+  --lav:     #a78bfa;
+  --muted:   #6b8aa8;
+  --text:    #d4e8f0;
+  --border:  rgba(255,255,255,.07);
+  --ff-head: 'DM Serif Display', Georgia, serif;
+  --ff-body: 'DM Sans', sans-serif;
+  --ff-mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff-body);
+  background: var(--deep);
+  color: var(--text);
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--deep); }
+::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 99px; }
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center;
+  padding: 6rem 2rem 4rem;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 30%, rgba(14,206,202,.13) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(167,139,250,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 15% 70%, rgba(46,232,154,.05) 0%, transparent 55%);
+}
+
+/* Animated orbiting dots */
+.orb {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; animation: orbit linear infinite;
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(var(--r)) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(var(--r)) rotate(-360deg); }
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--ff-mono); font-size: .68rem; letter-spacing: .18em;
+  color: var(--teal); text-transform: uppercase;
+  border: 1px solid rgba(14,206,202,.3);
+  padding: 6px 18px; border-radius: 99px;
+  margin-bottom: 2rem;
+  animation: fadeUp .8s ease both;
+}
+.hero-tag::before { content: '◈'; font-size: .5rem; }
+
+.hero-title {
+  font-family: var(--ff-head);
+  font-size: clamp(3.5rem, 10vw, 7.5rem);
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -.02em;
+  animation: fadeUp .8s .1s ease both;
+}
+.hero-title em {
+  font-style: italic; color: var(--teal2);
+  display: block;
+}
+
+.hero-sub {
+  max-width: 560px;
+  font-size: clamp(.95rem, 2vw, 1.1rem);
+  font-weight: 300; line-height: 1.75;
+  color: var(--muted);
+  margin: 1.5rem auto 0;
+  animation: fadeUp .8s .2s ease both;
+}
+
+.hero-stats {
+  display: flex; gap: 0; flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 3.5rem;
+  border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+  animation: fadeUp .8s .3s ease both;
+}
+.stat {
+  padding: 1.5rem 2.5rem;
+  border-right: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  backdrop-filter: blur(12px);
+  text-align: center;
+  transition: background .25s;
+}
+.stat:last-child { border-right: none; }
+.stat:hover { background: rgba(14,206,202,.06); }
+.stat-num {
+  font-family: var(--ff-head);
+  font-size: 2rem; color: var(--teal2); display: block;
+}
+.stat-lbl { font-size: .73rem; color: var(--muted); letter-spacing: .05em; }
+
+.scroll-hint {
+  position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--muted); font-size: .72rem; letter-spacing: .1em;
+  text-transform: uppercase; animation: fadeUp .8s .6s ease both;
+}
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--teal), transparent);
+  animation: pulse-line 2s ease-in-out infinite;
+}
+@keyframes pulse-line { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+/* ── SECTION BASE ── */
+section {
+  position: relative; z-index: 1;
+  padding: 6rem 2rem;
+}
+
+.container { max-width: 1100px; margin: 0 auto; }
+
+.sec-label {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--ff-mono); font-size: .68rem; letter-spacing: .18em;
+  color: var(--teal); text-transform: uppercase; margin-bottom: 1rem;
+}
+.sec-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(14,206,202,.15); border: 1px solid rgba(14,206,202,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem; font-weight: 600;
+}
+.sec-title {
+  font-family: var(--ff-head);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.1; color: #fff;
+  margin-bottom: 1.2rem;
+}
+.sec-body {
+  font-size: 1rem; line-height: 1.8;
+  color: var(--muted); max-width: 680px;
+}
+
+/* ── CELL ILLUSTRATION ── */
+.cell-wrap {
+  display: flex; justify-content: center; align-items: center;
+  margin: 3rem 0;
+}
+.cell-svg { width: 100%; max-width: 520px; }
+
+/* ── STAGES ── */
+.stages-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px; margin: 2.5rem 0;
+}
+.stage-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 1rem .75rem .8rem;
+  text-align: center; cursor: pointer;
+  transition: border-color .25s, background .25s, transform .2s;
+  position: relative; overflow: hidden;
+}
+.stage-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent, var(--teal)); opacity: 0;
+  transition: opacity .25s;
+}
+.stage-card:hover { transform: translateY(-3px); }
+.stage-card:hover::after { opacity: .05; }
+.stage-card.active {
+  border-color: var(--accent, var(--teal));
+  background: color-mix(in srgb, var(--accent, var(--teal)) 8%, var(--card));
+}
+.stage-card svg { width: 100%; height: 80px; }
+.stage-name {
+  font-size: .7rem; font-weight: 600; letter-spacing: .07em;
+  color: var(--muted); text-transform: uppercase; margin-top: 8px;
+}
+.stage-num { font-size: .6rem; color: var(--accent, var(--teal)); margin-top: 2px; font-family: var(--ff-mono); }
+
+.detail-panel {
+  background: linear-gradient(135deg, rgba(14,206,202,.06), rgba(14,206,202,.02));
+  border: 1px solid rgba(14,206,202,.2);
+  border-radius: 14px; padding: 1.5rem 2rem;
+  transition: all .3s;
+}
+.detail-title {
+  font-family: var(--ff-head); font-size: 1.3rem; color: var(--teal2);
+  margin-bottom: .5rem;
+}
+.detail-text { font-size: .93rem; line-height: 1.75; color: #8dafc4; }
+
+/* ── PATHWAYS ── */
+.pathways {
+  background: var(--panel);
+  border-radius: 24px; padding: 3rem;
+  margin: 2.5rem 0;
+}
+
+.via-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 1.5rem; }
+.via-card {
+  border-radius: 14px; padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+.via-card.ext { background: rgba(167,139,250,.05); border-color: rgba(167,139,250,.2); }
+.via-card.int { background: rgba(14,206,202,.05); border-color: rgba(14,206,202,.2); }
+.via-title {
+  font-weight: 600; font-size: .95rem;
+  margin-bottom: .6rem;
+}
+.via-card.ext .via-title { color: var(--lav); }
+.via-card.int .via-title { color: var(--teal); }
+.via-body { font-size: .85rem; color: var(--muted); line-height: 1.7; }
+
+/* ── VS SECTION ── */
+.vs-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 20px; margin: 2.5rem 0;
+}
+.vs-card {
+  border-radius: 16px; padding: 2rem;
+  position: relative; overflow: hidden;
+}
+.vs-card.apo {
+  background: linear-gradient(135deg, rgba(14,206,202,.08), rgba(14,206,202,.03));
+  border: 1px solid rgba(14,206,202,.25);
+}
+.vs-card.nec {
+  background: linear-gradient(135deg, rgba(255,77,109,.08), rgba(255,77,109,.03));
+  border: 1px solid rgba(255,77,109,.25);
+}
+.vs-title {
+  font-family: var(--ff-head); font-size: 1.4rem; margin-bottom: .4rem;
+}
+.vs-card.apo .vs-title { color: var(--teal2); }
+.vs-card.nec .vs-title { color: var(--coral); }
+.vs-subtitle { font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem; }
+
+.vs-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: .85rem; }
+.vs-table th {
+  padding: 10px 16px; text-align: left;
+  background: rgba(255,255,255,.03);
+  font-size: .72rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--border);
+}
+.vs-table td {
+  padding: 9px 16px; color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  font-size: .84rem;
+}
+.vs-table tr:last-child td { border: none; }
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 99px;
+  font-size: .7rem; font-weight: 600;
+}
+.badge-ok  { background: rgba(46,232,154,.15); color: #2ee89a; }
+.badge-bad { background: rgba(255,77,109,.15); color: #ff4d6d; }
+
+/* ── FACTS ── */
+.facts-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 14px; margin-top: 2.5rem;
+}
+.fact-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.5rem;
+  transition: border-color .25s, transform .2s;
+}
+.fact-card:hover { transform: translateY(-4px); border-color: rgba(14,206,202,.3); }
+.fact-icon { font-size: 1.6rem; margin-bottom: .8rem; }
+.fact-title { font-weight: 600; font-size: .9rem; color: #e2eef5; margin-bottom: .4rem; }
+.fact-body { font-size: .8rem; color: var(--muted); line-height: 1.6; }
+
+/* ── FOOTER ── */
+footer {
+  text-align: center; padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+}
+.footer-title {
+  font-family: var(--ff-head); font-size: 1.8rem; color: var(--teal2); margin-bottom: .5rem;
+}
+.footer-sub { font-size: .85rem; color: var(--muted); }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 0; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── ANIMATION SECTION ── */
+.anim-wrap { background: var(--panel); border-radius: 24px; padding: 2rem; margin: 2.5rem 0; }
+.anim-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.via-toggle { display: flex; gap: 6px; }
+.via-btn {
+  padding: 6px 16px; border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: transparent; cursor: pointer;
+  font-size: .78rem; color: var(--muted);
+  transition: all .2s; font-family: var(--ff-body);
+}
+.via-btn.active { background: rgba(14,206,202,.15); color: var(--teal2); border-color: rgba(14,206,202,.35); }
+.stage-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
+.s-btn {
+  flex-shrink: 0; padding: 4px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.08); background: transparent;
+  cursor: pointer; font-size: .72rem; color: var(--muted);
+  transition: all .2s; font-family: var(--ff-body); white-space: nowrap;
+}
+.s-btn.active { border-color: rgba(14,206,202,.4); color: var(--teal2); background: rgba(14,206,202,.08); }
+.anim-canvas {
+  border-radius: 14px; border: 1px solid rgba(255,255,255,.06);
+  background: rgba(10,20,35,.7); overflow: hidden; margin-bottom: 14px;
+}
+.anim-canvas svg { display: block; width: 100%; }
+.anim-info {
+  border: 1px solid rgba(255,255,255,.07); border-radius: 14px;
+  padding: 1.2rem 1.5rem; background: rgba(255,255,255,.02);
+  margin-bottom: 12px;
+}
+.anim-info-title { font-family: var(--ff-head); font-size: 1.1rem; color: var(--teal2); margin-bottom: .4rem; }
+.anim-info-text { font-size: .85rem; color: var(--muted); line-height: 1.7; }
+.pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.apill {
+  padding: 2px 11px; border-radius: 99px; font-size: .72rem; font-weight: 600;
+}
+.apill-p { background: rgba(14,206,202,.13); color: var(--teal2); }
+.apill-e { background: rgba(46,232,154,.13); color: var(--sage); }
+.apill-r { background: rgba(255,77,109,.13); color: var(--coral); }
+.anim-controls { display: flex; align-items: center; gap: 10px; }
+.play-btn {
+  padding: 6px 18px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04);
+  cursor: pointer; font-size: .8rem; color: var(--text);
+  font-family: var(--ff-body); transition: background .2s; white-space: nowrap;
+}
+.play-btn:hover { background: rgba(255,255,255,.08); }
+.prog-wrap {
+  flex: 1; height: 4px; background: rgba(255,255,255,.1);
+  border-radius: 2px; cursor: pointer; position: relative;
+}
+.prog-fill { height: 100%; border-radius: 2px; background: var(--teal); pointer-events: none; }
+.prog-thumb {
+  position: absolute; top: -5px; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--teal2); transform: translateX(-50%);
+  pointer-events: none; transition: left .15s;
+}
+.step-lbl { font-size: .72rem; color: var(--muted); min-width: 50px; text-align: right; font-family: var(--ff-mono); }
+@keyframes adrift { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+@keyframes apulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes ablink { 0%,100%{opacity:1} 40%,60%{opacity:.1} }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .stages-grid { grid-template-columns: repeat(3,1fr); }
+  .vs-grid, .via-grid, .facts-grid { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; }
+  .stat { border-right: none; border-bottom: 1px solid var(--border); }
+  .stat:last-child { border-bottom: none; }
+  .pathways { padding: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .stages-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* NAV DOT */
+.nav-dots {
+  position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 100;
+}
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted); cursor: pointer;
+  transition: background .25s, transform .25s;
+}
+.nav-dot.active { background: var(--teal); transform: scale(1.6); }
+
+</style>
+</head>
+<body>
+
+<!-- NAV DOTS -->
+<div class="nav-dots" id="navDots">
+  <div class="nav-dot active" data-sec="0" title="Início"></div>
+  <div class="nav-dot" data-sec="1" title="O que é?"></div>
+  <div class="nav-dot" data-sec="2" title="Etapas"></div>
+  <div class="nav-dot" data-sec="3" title="Animação"></div>
+  <div class="nav-dot" data-sec="4" title="Vias"></div>
+  <div class="nav-dot" data-sec="5" title="Apop. vs Necrose"></div>
+  <div class="nav-dot" data-sec="6" title="Importância"></div>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="hero" id="sec0">
+  <div class="hero-glow"></div>
+
+  <!-- orbiting particles -->
+  <div class="orb" style="--r:220px;width:6px;height:6px;background:var(--teal);opacity:.5;top:50%;left:50%;animation-duration:18s;"></div>
+  <div class="orb" style="--r:310px;width:4px;height:4px;background:var(--lav);opacity:.4;top:50%;left:50%;animation-duration:26s;animation-direction:reverse;"></div>
+  <div class="orb" style="--r:160px;width:3px;height:3px;background:var(--sage);opacity:.5;top:50%;left:50%;animation-duration:12s;"></div>
+
+  <div class="hero-tag">Biologia Celular</div>
+
+  <h1 class="hero-title">
+    Apoptose
+    <em>A Morte Programada</em>
+  </h1>
+
+  <p class="hero-sub">
+    O suicídio celular silencioso que mantém seu corpo em equilíbrio —
+    um processo tão essencial quanto a própria vida.
+  </p>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">50–70 bi</span>
+      <span class="stat-lbl">Células morrem/dia em adultos</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">&lt; 60 min</span>
+      <span class="stat-lbl">Duração do processo completo</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">2 vias</span>
+      <span class="stat-lbl">Extrínseca e Intrínseca</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">~1972</span>
+      <span class="stat-lbl">Ano da descoberta formal</span>
+    </div>
+  </div>
+
+
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC 1: O QUE É ══ -->
+<section id="sec1">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num">1</div>
+      O que é a apoptose
+    </div>
+    <h2 class="sec-title reveal">Morte por design,<br>não por acidente.</h2>
+    <p class="sec-body reveal">
+      A apoptose é um programa genético de autodestruição celular altamente controlado.
+      Diferente da necrose — morte acidental e caótica — a apoptose é ordenada, silenciosa
+      e indispensável. Células envelhecidas, danificadas ou potencialmente cancerosas são
+      eliminadas sem inflamação, preservando os tecidos ao redor.
+    </p>
+
+    <!-- CÉLULA SAUDÁVEL SVG -->
+    <div class="cell-wrap reveal">
+      <svg class="cell-svg" viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="cellbg" cx="50%" cy="42%">
+            <stop offset="0%" stop-color="#1e3a5f" stop-opacity=".95"/>
+            <stop offset="100%" stop-color="#0a1726" stop-opacity=".8"/>
+          </radialGradient>
+          <radialGradient id="nucgrad" cx="48%" cy="42%">
+            <stop offset="0%" stop-color="#1a4a6e"/>
+            <stop offset="100%" stop-color="#0d2b45"/>
+          </radialGradient>
+          <radialGradient id="mitograd" cx="50%" cy="38%">
+            <stop offset="0%" stop-color="#1e3518"/>
+            <stop offset="100%" stop-color="#0d1f0c"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- membrana outer glow -->
+        <ellipse cx="260" cy="150" rx="220" ry="130" fill="rgba(14,206,202,.06)" />
+
+        <!-- membrana plasmática -->
+        <ellipse cx="260" cy="150" rx="210" ry="122"
+          fill="url(#cellbg)" stroke="#0ececa" stroke-width="2"/>
+
+        <!-- dashed ring -->
+        <ellipse cx="260" cy="150" rx="210" ry="122"
+          fill="none" stroke="rgba(94,240,236,.18)" stroke-width="5" stroke-dasharray="5 12"/>
+
+        <!-- núcleo -->
+        <ellipse cx="256" cy="148" rx="72" ry="56"
+          fill="url(#nucgrad)" stroke="#5ef0ec" stroke-width="1.8" filter="url(#glow)"/>
+        <ellipse cx="256" cy="148" rx="72" ry="56"
+          fill="none" stroke="rgba(94,240,236,.25)" stroke-width="4" stroke-dasharray="4 8"/>
+
+        <!-- cromatina -->
+        <path d="M238 134 Q252 126 268 136 Q280 145 264 156 Q250 165 236 155 Z"
+          fill="rgba(94,240,236,.22)" stroke="rgba(94,240,236,.4)" stroke-width="1"/>
+
+        <!-- label núcleo -->
+        <text x="256" y="152" text-anchor="middle" font-family="DM Sans,sans-serif"
+          font-size="11" font-weight="600" fill="#5ef0ec">Núcleo</text>
+        <text x="256" y="165" text-anchor="middle" font-family="DM Sans,sans-serif"
+          font-size="8.5" fill="rgba(94,240,236,.5)">DNA + Cromatina</text>
+
+        <!-- mitocôndria 1 -->
+        <g transform="translate(120,105) rotate(-22)">
+          <ellipse rx="28" ry="13" fill="url(#mitograd)" stroke="#2ee89a" stroke-width="1.3"/>
+          <path d="M-12,-2 Q-4,-6 4,-2 Q12,2 4,6 Q-4,10 -12,6Z"
+            fill="none" stroke="#2ee89a" stroke-width=".9" opacity=".7"/>
+          <text y="22" text-anchor="middle" font-family="DM Sans,sans-serif"
+            font-size="9" fill="#2ee89a" transform="rotate(22)">Mitocôndria</text>
+        </g>
+
+        <!-- mitocôndria 2 -->
+        <g transform="translate(400,100) rotate(18)">
+          <ellipse rx="26" ry="11" fill="url(#mitograd)" stroke="#2ee89a" stroke-width="1.3"/>
+          <path d="M-10,-2 Q-3,-5 3,-2 Q10,2 3,5 Q-3,8 -10,5Z"
+            fill="none" stroke="#2ee89a" stroke-width=".9" opacity=".7"/>
+        </g>
+
+        <!-- mitocôndria 3 -->
+        <g transform="translate(145,205) rotate(30)">
+          <ellipse rx="20" ry="9" fill="url(#mitograd)" stroke="#2ee89a" stroke-width="1.2"/>
+        </g>
+
+        <!-- retículo endoplasmático -->
+        <path d="M330 105 Q352 96 364 112 Q370 126 358 133 Q346 140 330 128Z"
+          fill="rgba(245,166,35,.1)" stroke="#f5a623" stroke-width="1.1" stroke-dasharray="3 4"/>
+        <text x="347" y="122" text-anchor="middle" font-family="DM Sans,sans-serif"
+          font-size="8.5" fill="#f5a623" opacity=".8">Ret. End.</text>
+
+        <!-- ribossomos (dots) -->
+        <circle cx="310" cy="90" r="3" fill="rgba(245,166,35,.4)"/>
+        <circle cx="320" cy="100" r="2.5" fill="rgba(245,166,35,.3)"/>
+        <circle cx="195" cy="185" r="3" fill="rgba(245,166,35,.4)"/>
+        <circle cx="182" cy="175" r="2" fill="rgba(245,166,35,.3)"/>
+
+        <!-- vesícula -->
+        <circle cx="380" cy="175" r="18" fill="rgba(14,206,202,.08)"
+          stroke="rgba(14,206,202,.3)" stroke-width="1"/>
+        <text x="380" y="179" text-anchor="middle" font-family="DM Sans,sans-serif"
+          font-size="7.5" fill="rgba(94,240,236,.6)">Vesícula</text>
+
+        <!-- legenda embaixo -->
+        <text x="260" y="290" text-anchor="middle" font-family="DM Sans,sans-serif"
+          font-size="11" fill="rgba(107,138,168,.7)">Célula saudável e funcional</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC 2: ETAPAS ══ -->
+<section id="sec2" style="background: linear-gradient(180deg, var(--deep) 0%, var(--dark) 100%);">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num">2</div>
+      O processo passo a passo
+    </div>
+    <h2 class="sec-title reveal">Cinco fases,<br>um destino programado.</h2>
+    <p class="sec-body reveal">
+      Clique em cada fase para entender o que acontece molecularmente durante a apoptose.
+    </p>
+
+    <div class="stages-grid reveal" id="stageGrid">
+
+      <!-- Fase 1 -->
+      <div class="stage-card active" style="--accent: var(--lav)" onclick="selectStage(0)">
+        <svg viewBox="0 0 100 80">
+          <ellipse cx="50" cy="42" rx="32" ry="26" fill="#1e1040" stroke="#a78bfa" stroke-width="1.4"/>
+          <circle cx="30" cy="24" r="5" fill="#a78bfa" opacity=".8"/>
+          <circle cx="70" cy="22" r="5" fill="#a78bfa" opacity=".8"/>
+          <circle cx="50" cy="18" r="5" fill="#a78bfa" opacity=".8"/>
+          <line x1="33" y1="27" x2="40" y2="35" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <line x1="66" y1="26" x2="60" y2="35" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <line x1="50" y1="23" x2="50" y2="34" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <ellipse cx="50" cy="43" rx="12" ry="10" fill="rgba(94,240,236,.15)" stroke="#5ef0ec" stroke-width="1"/>
+        </svg>
+        <div class="stage-name">Recepção</div>
+        <div class="stage-num">Fase 1</div>
+      </div>
+
+      <!-- Fase 2 -->
+      <div class="stage-card" style="--accent: var(--amber)" onclick="selectStage(1)">
+        <svg viewBox="0 0 100 80">
+          <ellipse cx="50" cy="44" rx="33" ry="27" fill="#1a1005" stroke="#f5a623" stroke-width="1.4"/>
+          <rect x="33" y="28" width="34" height="11" rx="4" fill="rgba(245,166,35,.25)" stroke="#f5a623" stroke-width=".9"/>
+          <text x="50" y="37" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#f5a623">Casp-8</text>
+          <line x1="50" y1="39" x2="50" y2="47" stroke="#f5a623" stroke-width="1"/>
+          <rect x="33" y="47" width="34" height="11" rx="4" fill="rgba(245,166,35,.35)" stroke="#f5a623" stroke-width=".9"/>
+          <text x="50" y="56" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#f5a623">Casp-3</text>
+          <line x1="40" y1="58" x2="30" y2="65" stroke="#f5a623" stroke-width=".9"/>
+          <line x1="60" y1="58" x2="70" y2="65" stroke="#f5a623" stroke-width=".9"/>
+        </svg>
+        <div class="stage-name">Caspases</div>
+        <div class="stage-num">Fase 2</div>
+      </div>
+
+      <!-- Fase 3 -->
+      <div class="stage-card" style="--accent: var(--coral)" onclick="selectStage(2)">
+        <svg viewBox="0 0 100 80">
+          <ellipse cx="50" cy="44" rx="33" ry="27" fill="#1a0810" stroke="#ff4d6d" stroke-width="1.4" stroke-dasharray="3 2"/>
+          <ellipse cx="50" cy="44" rx="20" ry="16" fill="rgba(255,77,109,.12)" stroke="#ff4d6d" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <ellipse cx="44" cy="40" rx="8" ry="6" fill="rgba(255,77,109,.45)" stroke="#ff4d6d" stroke-width=".7"/>
+          <ellipse cx="57" cy="47" rx="7" ry="5.5" fill="rgba(255,77,109,.4)" stroke="#ff4d6d" stroke-width=".7"/>
+          <ellipse cx="46" cy="52" rx="6" ry="4.5" fill="rgba(255,77,109,.35)" stroke="#ff4d6d" stroke-width=".7"/>
+        </svg>
+        <div class="stage-name">Condensação</div>
+        <div class="stage-num">Fase 3</div>
+      </div>
+
+      <!-- Fase 4 -->
+      <div class="stage-card" style="--accent: var(--teal)" onclick="selectStage(3)">
+        <svg viewBox="0 0 100 80">
+          <ellipse cx="32" cy="32" rx="22" ry="17" fill="#0a1726" stroke="#0ececa" stroke-width="1.3"/>
+          <ellipse cx="30" cy="30" rx="8" ry="6" fill="rgba(255,77,109,.45)" stroke="#ff4d6d" stroke-width=".6"/>
+          <ellipse cx="68" cy="52" rx="20" ry="15" fill="#0a1726" stroke="#0ececa" stroke-width="1.3"/>
+          <ellipse cx="70" cy="51" rx="7" ry="5" fill="rgba(255,77,109,.4)" stroke="#ff4d6d" stroke-width=".6"/>
+          <ellipse cx="72" cy="24" rx="13" ry="10" fill="#0a1726" stroke="#0ececa" stroke-width="1.1"/>
+          <ellipse cx="28" cy="62" rx="11" ry="8" fill="#0a1726" stroke="#0ececa" stroke-width="1.1"/>
+        </svg>
+        <div class="stage-name">Fragmentação</div>
+        <div class="stage-num">Fase 4</div>
+      </div>
+
+      <!-- Fase 5 -->
+      <div class="stage-card" style="--accent: var(--sage)" onclick="selectStage(4)">
+        <svg viewBox="0 0 100 80">
+          <path d="M18 44 Q16 28 34 20 Q52 12 70 22 Q86 30 84 46 Q86 62 68 70 Q50 78 32 68 Q14 58 18 44Z"
+            fill="#0a2015" stroke="#2ee89a" stroke-width="1.3"/>
+          <line x1="22" y1="30" x2="12" y2="20" stroke="#2ee89a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="78" y1="30" x2="88" y2="18" stroke="#2ee89a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="50" y1="14" x2="50" y2="4" stroke="#2ee89a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="50" cy="44" rx="16" ry="12" fill="rgba(14,206,202,.18)" stroke="#0ececa" stroke-width="1" stroke-dasharray="2 2"/>
+          <ellipse cx="30" cy="54" rx="8" ry="7" fill="rgba(46,232,154,.18)" stroke="#2ee89a" stroke-width=".9"/>
+        </svg>
+        <div class="stage-name">Fagocitose</div>
+        <div class="stage-num">Fase 5</div>
+      </div>
+
+    </div>
+
+    <div class="detail-panel reveal" id="detailPanel">
+      <div class="detail-title" id="detailTitle">Fase 1 — Recepção do Sinal</div>
+      <div class="detail-text" id="detailText">
+        A célula recebe sinais de morte através de receptores na membrana plasmática (via extrínseca),
+        como FasL e TNF-α ligando-se a receptores de morte. Alternativamente, sinais internos como
+        dano ao DNA ou estresse oxidativo ativam a via intrínseca pela mitocôndria.
+        Este é o "gatilho" molecular que dispara todo o programa de autodestruição.
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC ANIM: ANIMAÇÃO MOLECULAR ══ -->
+<section id="sec-anim" style="background: linear-gradient(180deg, var(--dark) 0%, var(--deep) 100%);">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num" style="background:rgba(167,139,250,.15);border-color:rgba(167,139,250,.3);color:var(--lav);">▶</div>
+      Animação interativa
+    </div>
+    <h2 class="sec-title reveal">O processo molecular<br>animado passo a passo.</h2>
+    <p class="sec-body reveal">Selecione a via de ativação e navegue por cada fase. Veja as proteínas e enzimas envolvidas em tempo real.</p>
+
+    <div class="anim-wrap reveal">
+      <div class="anim-top">
+        <div class="via-toggle">
+          <button class="via-btn active" onclick="animSetVia('ext')">Via extrínseca</button>
+          <button class="via-btn" onclick="animSetVia('int')">Via intrínseca</button>
+        </div>
+        <span style="font-size:.72rem;color:var(--muted)">Clique nos botões ou use a linha do tempo</span>
+      </div>
+
+      <div class="stage-bar" id="animStageBar"></div>
+
+      <div class="anim-canvas">
+        <svg id="animSvg" viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="anarr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+            <radialGradient id="acellGrad" cx="48%" cy="42%">
+              <stop offset="0%" stop-color="#1e3a5f" stop-opacity=".7"/>
+              <stop offset="100%" stop-color="#0a1520" stop-opacity=".95"/>
+            </radialGradient>
+            <radialGradient id="anucGrad" cx="45%" cy="40%">
+              <stop offset="0%" stop-color="#1a3d5c"/>
+              <stop offset="100%" stop-color="#091825"/>
+            </radialGradient>
+            <radialGradient id="amitoGrad" cx="45%" cy="35%">
+              <stop offset="0%" stop-color="#1a3018"/>
+              <stop offset="100%" stop-color="#091510"/>
+            </radialGradient>
+          </defs>
+          <g id="animScene"></g>
+        </svg>
+      </div>
+
+      <div class="anim-info">
+        <div class="anim-info-title" id="animTitle">—</div>
+        <div class="anim-info-text" id="animText">—</div>
+        <div class="pill-wrap" id="animPills"></div>
+      </div>
+
+      <div class="anim-controls">
+        <button class="play-btn" id="animPlayBtn" onclick="animTogglePlay()">▶ Reproduzir</button>
+        <div class="prog-wrap" id="animProgWrap" onclick="animScrub(event)">
+          <div class="prog-fill" id="animProgFill" style="width:0%"></div>
+          <div class="prog-thumb" id="animProgThumb" style="left:0%"></div>
+        </div>
+        <div class="step-lbl" id="animStepLbl">1 / 7</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC 3: DUAS VIAS ══ -->
+<section id="sec3">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num">3</div>
+      Mecanismos moleculares
+    </div>
+    <h2 class="sec-title reveal">As duas vias<br>da apoptose.</h2>
+    <p class="sec-body reveal">
+      Existem duas rotas moleculares distintas que convergem na mesma caspase executora,
+      garantindo que diferentes tipos de sinais possam acionar o programa de morte celular.
+    </p>
+
+    <div class="pathways reveal">
+      <!-- Diagrama SVG das vias -->
+      <svg viewBox="0 0 700 280" width="100%" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:1.5rem">
+        <defs>
+          <marker id="arrowd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrowl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrowt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M1 1L9 5L1 9" fill="none" stroke="#0ececa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- VIA EXTRÍNSECA -->
+        <text x="185" y="20" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="#a78bfa" font-weight="600" letter-spacing="1">VIA EXTRÍNSECA</text>
+        <!-- box 1 -->
+        <rect x="85" y="28" width="200" height="36" rx="9" fill="rgba(167,139,250,.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="185" y="50" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10.5" fill="#c4b5fd" font-weight="500">FasL / TNF-α</text>
+        <text x="185" y="60" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#a78bfa">Ligantes de morte externos</text>
+        <line x1="185" y1="64" x2="185" y2="86" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowl)"/>
+        <!-- box 2 -->
+        <rect x="85" y="86" width="200" height="36" rx="9" fill="rgba(167,139,250,.15)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="185" y="108" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10.5" fill="#c4b5fd" font-weight="500">Receptor Fas / TNFR</text>
+        <text x="185" y="118" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#a78bfa">Membrana plasmática</text>
+        <line x1="185" y1="122" x2="185" y2="144" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowl)"/>
+        <!-- box 3 -->
+        <rect x="100" y="144" width="170" height="30" rx="8" fill="rgba(245,166,35,.15)" stroke="#f5a623" stroke-width="1"/>
+        <text x="185" y="163" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="#fcd34d" font-weight="600">Caspase-8 (ativada)</text>
+
+        <!-- VIA INTRÍNSECA -->
+        <text x="515" y="20" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="#0ececa" font-weight="600" letter-spacing="1">VIA INTRÍNSECA</text>
+        <rect x="415" y="28" width="200" height="36" rx="9" fill="rgba(14,206,202,.1)" stroke="#0ececa" stroke-width="1"/>
+        <text x="515" y="50" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10.5" fill="#5ef0ec" font-weight="500">Dano ao DNA / Hipóxia</text>
+        <text x="515" y="60" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#0ececa">Estresse celular interno</text>
+        <line x1="515" y1="64" x2="515" y2="86" stroke="#0ececa" stroke-width="1.5" marker-end="url(#arrowt)"/>
+        <rect x="415" y="86" width="200" height="36" rx="9" fill="rgba(14,206,202,.15)" stroke="#0ececa" stroke-width="1"/>
+        <text x="515" y="108" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10.5" fill="#5ef0ec" font-weight="500">Mitocôndria</text>
+        <text x="515" y="118" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#0ececa">Libera citocromo c</text>
+        <line x1="515" y1="122" x2="515" y2="144" stroke="#0ececa" stroke-width="1.5" marker-end="url(#arrowt)"/>
+        <rect x="430" y="144" width="170" height="30" rx="8" fill="rgba(245,166,35,.15)" stroke="#f5a623" stroke-width="1"/>
+        <text x="515" y="163" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="#fcd34d" font-weight="600">Apoptossomo + Casp-9</text>
+
+        <!-- CONVERGÊNCIA -->
+        <line x1="270" y1="159" x2="330" y2="212" stroke="#f5a623" stroke-width="1.5" marker-end="url(#arrowd)"/>
+        <line x1="430" y1="159" x2="370" y2="212" stroke="#f5a623" stroke-width="1.5" marker-end="url(#arrowd)"/>
+        <rect x="235" y="212" width="230" height="38" rx="11" fill="rgba(255,77,109,.2)" stroke="#ff4d6d" stroke-width="1.5"/>
+        <text x="350" y="234" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" fill="#fca5a5" font-weight="700">Caspase-3 (executora)</text>
+        <text x="350" y="246" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#ff4d6d">Degradação de proteínas e DNA → Apoptose</text>
+
+        <!-- rótulos laterais -->
+        <text x="5" y="105" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(167,139,250,.5)" writing-mode="tb">EXTRÍNSECA</text>
+        <text x="690" y="130" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(14,206,202,.5)" writing-mode="tb">INTRÍNSECA</text>
+      </svg>
+
+      <div class="via-grid">
+        <div class="via-card ext">
+          <div class="via-title">Via Extrínseca</div>
+          <div class="via-body">Iniciada por sinais externos. Ligantes como FasL ou TNF-α ligam-se a receptores de morte na membrana celular, ativando a caspase-8. Fundamental na resposta imune: linfócitos T citotóxicos usam essa via para eliminar células infectadas.</div>
+        </div>
+        <div class="via-card int">
+          <div class="via-title">Via Intrínseca</div>
+          <div class="via-body">Ativada por estresses internos: dano ao DNA, carência de fatores de crescimento, hipóxia ou excesso de radicais livres. A mitocôndria libera citocromo c, formando o apoptossomo com Apaf-1, que ativa caspase-9 → caspase-3.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC 4: APOPTOSE VS NECROSE ══ -->
+<section id="sec4" style="background: var(--dark);">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num">4</div>
+      Comparação
+    </div>
+    <h2 class="sec-title reveal">Apoptose versus<br>Necrose.</h2>
+    <p class="sec-body reveal">Duas formas de morte celular com consequências radicalmente distintas para o organismo.</p>
+
+    <div class="vs-grid reveal">
+      <div class="vs-card apo">
+        <div class="vs-title">Apoptose</div>
+        <div class="vs-subtitle">Controlada · Silenciosa · Sem inflamação</div>
+        <svg viewBox="0 0 200 120" width="100%" style="margin:1rem 0">
+          <ellipse cx="55" cy="45" rx="38" ry="28" fill="#0a1726" stroke="#0ececa" stroke-width="1.4"/>
+          <ellipse cx="52" cy="43" rx="13" ry="10" fill="rgba(255,77,109,.4)" stroke="#ff4d6d" stroke-width=".7"/>
+          <ellipse cx="125" cy="65" rx="34" ry="25" fill="#0a1726" stroke="#0ececa" stroke-width="1.4"/>
+          <ellipse cx="127" cy="63" rx="11" ry="8" fill="rgba(255,77,109,.38)" stroke="#ff4d6d" stroke-width=".7"/>
+          <ellipse cx="155" cy="30" rx="22" ry="16" fill="#0a1726" stroke="#0ececa" stroke-width="1.2"/>
+          <ellipse cx="40" cy="95" rx="18" ry="13" fill="#0a1726" stroke="#0ececa" stroke-width="1.1"/>
+          <text x="100" y="115" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(14,206,202,.6)">Corpos apoptóticos organizados</text>
+        </svg>
+      </div>
+      <div class="vs-card nec">
+        <div class="vs-title">Necrose</div>
+        <div class="vs-subtitle">Acidental · Caótica · Inflamação intensa</div>
+        <svg viewBox="0 0 200 120" width="100%" style="margin:1rem 0">
+          <path d="M40 60 Q38 34 60 26 Q88 16 118 30 Q148 42 145 65 Q150 88 122 98 Q88 110 58 96 Q34 82 40 60Z"
+            fill="#1a0810" stroke="#ff4d6d" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <line x1="145" y1="42" x2="162" y2="30" stroke="rgba(255,77,109,.6)" stroke-width="1.4" stroke-dasharray="2 2"/>
+          <line x1="40" y1="96" x2="24" y2="108" stroke="rgba(255,77,109,.6)" stroke-width="1.4" stroke-dasharray="2 2"/>
+          <line x1="92" y1="108" x2="88" y2="118" stroke="rgba(255,77,109,.6)" stroke-width="1.4" stroke-dasharray="2 2"/>
+          <line x1="80" y1="55" x2="100" y2="75" stroke="#ff4d6d" stroke-width="2.2"/>
+          <line x1="100" y1="55" x2="80" y2="75" stroke="#ff4d6d" stroke-width="2.2"/>
+          <text x="170" y="36" font-family="sans-serif" font-size="14" fill="#ff4d6d">⚠</text>
+          <text x="100" y="115" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,77,109,.6)">Ruptura celular e extravasamento</text>
+        </svg>
+      </div>
+    </div>
+
+    <table class="vs-table reveal">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th>Apoptose</th>
+          <th>Necrose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Causa</td><td>Sinal programado</td><td>Lesão acidental</td></tr>
+        <tr><td>Morfologia</td><td>Encolhimento celular</td><td>Inchaço e ruptura</td></tr>
+        <tr><td>DNA</td><td>Fragmentação ordenada (~180 pb)</td><td>Degradação aleatória</td></tr>
+        <tr><td>Membrana plasmática</td><td>Intacta até o fim</td><td>Rompida precocemente</td></tr>
+        <tr><td>Inflamação</td>
+          <td><span class="badge badge-ok">AUSENTE</span></td>
+          <td><span class="badge badge-bad">INTENSA</span></td>
+        </tr>
+        <tr><td>Destino final</td><td>Fagocitado por macrófagos</td><td>Necrose secundária</td></tr>
+        <tr><td>Energia (ATP)</td><td>Dependente de ATP</td><td>Independente</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SEC 5: IMPORTÂNCIA CLÍNICA ══ -->
+<section id="sec5">
+  <div class="container">
+    <div class="sec-label reveal">
+      <div class="sec-num">5</div>
+      Relevância clínica
+    </div>
+    <h2 class="sec-title reveal">Por que a apoptose<br>importa?</h2>
+    <p class="sec-body reveal">
+      Do desenvolvimento embrionário ao câncer, a apoptose está no centro dos maiores
+      desafios da medicina moderna.
+    </p>
+
+    <div class="facts-grid">
+      <div class="fact-card reveal">
+        <div class="fact-icon">🧠</div>
+        <div class="fact-title">Desenvolvimento neuronal</div>
+        <div class="fact-body">No feto, bilhões de neurônios em excesso são eliminados por apoptose para formar os circuitos cerebrais corretos. Sem isso, o sistema nervoso não se organiza adequadamente.</div>
+      </div>
+      <div class="fact-card reveal" style="transition-delay:.05s">
+        <div class="fact-icon">🖐️</div>
+        <div class="fact-title">Formação dos dedos</div>
+        <div class="fact-body">A separação dos dedos no embrião ocorre pela morte apoptótica das células interdigitais entre a 6ª e 8ª semana. Falhas nesse processo causam sindactilia.</div>
+      </div>
+      <div class="fact-card reveal" style="transition-delay:.1s">
+        <div class="fact-icon">🛡️</div>
+        <div class="fact-title">Imunidade e autoimunidade</div>
+        <div class="fact-body">Linfócitos autorreativos são eliminados por apoptose no timo — processo chamado seleção negativa. Falhas geram doenças autoimunes como lúpus e esclerose múltipla.</div>
+      </div>
+      <div class="fact-card reveal" style="transition-delay:.15s">
+        <div class="fact-icon">🎗️</div>
+        <div class="fact-title">Câncer</div>
+        <div class="fact-body">Tumores surgem quando células adquirem mutações em genes como Bcl-2 e p53 que bloqueiam a apoptose, permitindo crescimento descontrolado e resistência ao tratamento.</div>
+      </div>
+      <div class="fact-card reveal" style="transition-delay:.2s">
+        <div class="fact-icon">💊</div>
+        <div class="fact-title">Quimioterapia</div>
+        <div class="fact-body">Muitos quimioterápicos (cisplatina, doxorrubicina) agem reativando a apoptose em células cancerosas que aprenderam a resistir à morte celular programada.</div>
+      </div>
+      <div class="fact-card reveal" style="transition-delay:.25s">
+        <div class="fact-icon">🦠</div>
+        <div class="fact-title">Vírus e patógenos</div>
+        <div class="fact-body">Patógenos como HIV, herpesvírus e adenovírus produzem proteínas anti-apoptóticas (Bcl-2 virais) para sobreviver dentro das células hospedeiras por mais tempo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-title">Apoptose Celular</div>
+  <p class="footer-sub">
+    O equilíbrio entre vida e morte que sustenta a saúde de cada organismo.<br>
+    Cerca de <strong style="color:var(--teal2)">50–70 bilhões</strong> de células morrem por apoptose em seu corpo todos os dias.
+  </p>
+  <p style="margin-top:1.5rem;font-size:.75rem;color:rgba(107,138,168,.4);font-family:var(--ff-mono)">
+    Gabriel L. B. e Sophia Berton
+  </p>
+</footer>
+
+<script>
+/* ── STAGE INTERACTION ── */
+const stageData = [
+  {
+    title: 'Fase 1 — Recepção do Sinal',
+    text: 'A célula recebe sinais de morte através de receptores na membrana plasmática (via extrínseca), como FasL e TNF-α ligando-se a receptores de morte. Alternativamente, sinais internos como dano ao DNA ou estresse oxidativo ativam a via intrínseca pela mitocôndria. Este é o "gatilho" molecular que dispara todo o programa.'
+  },
+  {
+    title: 'Fase 2 — Ativação em Cascata das Caspases',
+    text: 'Caspases são proteases cisteínicas que atuam em cascata. A caspase-8 (extrínseca) ou caspase-9 (intrínseca) ativa a caspase-3, principal executora. Esta proteína vai clivar centenas de proteínas estruturais e enzimáticas, desmantelando a célula de forma sistemática e irreversível.'
+  },
+  {
+    title: 'Fase 3 — Condensação e Fragmentação Nuclear',
+    text: 'O DNA é cortado em fragmentos regulares de ~180 pares de bases (padrão em "escada" visível em gel de eletroforese). A cromatina se condensa na periferia nuclear e o núcleo se desintegra. A membrana plasmática emite projeções (blebs), mas permanece intacta — crucial para evitar inflamação.'
+  },
+  {
+    title: 'Fase 4 — Formação dos Corpos Apoptóticos',
+    text: 'A célula se fragmenta em pequenas vesículas chamadas "corpos apoptóticos", cada uma envolta por membrana plasmática intacta contendo organelas e fragmentos de DNA. Este empacotamento é fundamental: impede que o conteúdo tóxico vaze para o espaço extracelular.'
+  },
+  {
+    title: 'Fase 5 — Fagocitose pelos Macrófagos',
+    text: 'Os corpos apoptóticos expõem fosfatidilserina na face externa da membrana (normalmente interna), funcionando como sinal "coma-me" para macrófagos. São rapidamente fagocitados e digeridos. O processo se completa sem deixar rastro de inflamação ou cicatriz.'
+  }
+];
+
+function selectStage(idx) {
+  document.querySelectorAll('.stage-card').forEach((c, i) => {
+    c.classList.toggle('active', i === idx);
+  });
+  document.getElementById('detailTitle').textContent = stageData[idx].title;
+  document.getElementById('detailText').textContent  = stageData[idx].text;
+}
+
+/* ══ ANIMATION ENGINE ══ */
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const TEAL='#0ececa',TEAL2='#5ef0ec',AMBER='#d48a1d',RED='#cc3333',GREEN='#2a9a4a',LAV='#8b5cf6',BLUE='#2b7fd4',MUTED='#6b8aa8';
+const CX=310,CY=178,RX=148,RY=108,NCX=310,NCY=173,NRX=48,NRY=38;
+
+const STAGES_EXT=[
+  {label:'Célula saudável',title:'Célula saudável em homeostase',
+   text:'A célula está em equilíbrio. Bcl-2 e Bcl-xL protegem a mitocôndria. Os receptores Fas aguardam na membrana. p53 em níveis basais mantém a vigilância sobre o DNA.',
+   proteins:[{l:'Bcl-2',t:'p'},{l:'Bcl-xL',t:'p'},{l:'p53',t:'p'},{l:'IAP',t:'p'}],draw:'healthy'},
+  {label:'Ligante → receptor',title:'Fase 1 — FasL liga-se ao receptor Fas (CD95)',
+   text:'FasL ou TNF-α extracelulares ligam-se ao receptor Fas/CD95 na membrana plasmática. Isso recruta FADD (Fas-Associated Death Domain) formando o complexo DISC, que por sua vez recruta e ativa pró-caspase-8.',
+   proteins:[{l:'FasL',t:'r'},{l:'TNF-α',t:'r'},{l:'Fas/CD95',t:'p'},{l:'FADD',t:'p'},{l:'DISC',t:'e'}],draw:'receptor'},
+  {label:'Caspase-8',title:'Fase 2 — Ativação da caspase-8 iniciadora',
+   text:'O DISC cliva e ativa pró-caspase-8. Caspase-8 é uma protease cisteínica iniciadora. Bid é clivado em tBid, que amplifica o sinal ativando a via mitocondrial (crosstalk).',
+   proteins:[{l:'Pró-casp-8',t:'p'},{l:'Caspase-8',t:'e'},{l:'Bid',t:'p'},{l:'tBid',t:'e'}],draw:'casp8'},
+  {label:'Caspase-3 exec.',title:'Fase 3 — Caspase-3: executora central',
+   text:'Caspase-8 cliva pró-caspase-3 e pró-caspase-7. A caspase-3 ativa cliva mais de 600 substratos: PARP (inativa reparo de DNA), ICAD (libera a DNAse CAD), lamininas nucleares e componentes do citoesqueleto.',
+   proteins:[{l:'Caspase-3',t:'e'},{l:'Caspase-7',t:'e'},{l:'PARP',t:'r'},{l:'ICAD',t:'r'},{l:'CAD/DNAse',t:'e'}],draw:'casp3'},
+  {label:'Condensação',title:'Fase 4 — Condensação e fragmentação do DNA',
+   text:'CAD (DNAse ativada) fragmenta o DNA em múltiplos de ~180 pb. Caspase-6 cliva lamininas A, B e C, colapsando o envelope nuclear. A cromatina se condensa em crescentes na periferia do núcleo.',
+   proteins:[{l:'CAD/DNAse',t:'e'},{l:'Caspase-6',t:'e'},{l:'Laminina A/B/C',t:'r'},{l:'H2AX-P',t:'p'}],draw:'condensation'},
+  {label:'Blebs / PS',title:'Fase 5 — Blebbing e exposição de fosfatidilserina',
+   text:'Gelsolin clivada desorganiza a actina. ROCK1 (ativado por caspase-3) hiper-contrai o citoesqueleto gerando blebs. TMEM16F expõe fosfatidilserina (PS) na face externa da membrana — o sinal "eat me" para macrófagos.',
+   proteins:[{l:'Gelsolin clivada',t:'e'},{l:'ROCK1',t:'e'},{l:'TMEM16F',t:'p'},{l:'Fosfatidilserina',t:'e'}],draw:'blebs'},
+  {label:'Fagocitose',title:'Fase 6 — Fagocitose pelo macrófago',
+   text:'PS é reconhecida por receptores TAM (Tyro3/Axl/Mer) e TIM-4. MFG-E8 funciona como molécula ponte entre PS e integrina αvβ3 do macrófago. Os corpos apoptóticos são englobados e digeridos lisossomalmente — sem inflamação.',
+   proteins:[{l:'Receptor TAM',t:'p'},{l:'TIM-4',t:'p'},{l:'MFG-E8',t:'p'},{l:'Integrina αvβ3',t:'p'},{l:'IL-10',t:'e'}],draw:'phago'}
+];
+
+const STAGES_INT=[
+  {label:'Célula saudável',title:'Célula saudável em homeostase',
+   text:'Bcl-2 e Bcl-xL ancorados na membrana mitocondrial externa (MOM) bloqueiam Bax e Bak inativos. Citocromo c confinado no espaço intermembrana. p53 em baixos níveis basais.',
+   proteins:[{l:'Bcl-2',t:'p'},{l:'Bcl-xL',t:'p'},{l:'Bax (inativo)',t:'p'},{l:'Citocromo c',t:'p'}],draw:'healthy'},
+  {label:'Estresse → p53',title:'Fase 1 — Dano ao DNA ativa p53',
+   text:'Dano ao DNA (radiação, quimioterápicos, hipóxia) ativa as quinases ATM e ATR, que fosforilam e estabilizam p53. p53 ativo transcreve PUMA, NOXA e BAX — proteínas pró-apoptóticas que antagonizam Bcl-2.',
+   proteins:[{l:'ATM/ATR',t:'e'},{l:'p53-P',t:'e'},{l:'PUMA',t:'e'},{l:'NOXA',t:'e'},{l:'BAX',t:'e'}],draw:'damage'},
+  {label:'Bax → MOMP',title:'Fase 2 — Bax/Bak oligomerizam: MOMP',
+   text:'PUMA e NOXA neutralizam Bcl-2 e Bcl-xL. Bax e Bak se oligomerizam na membrana mitocondrial externa formando poros (MOMP). Este é o ponto de não retorno da apoptose intrínseca.',
+   proteins:[{l:'Bax oligômero',t:'e'},{l:'Bak oligômero',t:'e'},{l:'MOMP',t:'e'},{l:'Bcl-2 inibido',t:'r'}],draw:'momp'},
+  {label:'Apoptossomo',title:'Fase 3 — Citocromo c forma o apoptossomo',
+   text:'Citocromo c é liberado do espaço intermembrana para o citosol. Liga-se a Apaf-1 e dATP, formando o apoptossomo — complexo heptamérico em "roda" que recruta e ativa pró-caspase-9.',
+   proteins:[{l:'Citocromo c',t:'e'},{l:'Apaf-1',t:'p'},{l:'dATP',t:'p'},{l:'Apoptossomo',t:'e'},{l:'Casp-9',t:'e'}],draw:'apoptosome'},
+  {label:'Caspase-9 → 3',title:'Fase 4 — Caspase-9 ativa caspase-3 executora',
+   text:'Apoptossomo ativa caspase-9, que cliva pró-caspase-3 e 7. SMAC/Diablo é também liberado pela mitocôndria e inibe IAPs (inibidoras de caspases), garantindo amplificação irreversível da cascata.',
+   proteins:[{l:'Caspase-9',t:'e'},{l:'Caspase-3',t:'e'},{l:'SMAC/Diablo',t:'e'},{l:'IAP inibida',t:'r'},{l:'PARP clivada',t:'r'}],draw:'casp3'},
+  {label:'Condensação',title:'Fase 5 — Condensação e fragmentação do DNA',
+   text:'Idêntico à via extrínseca: CAD fragmenta DNA em ~180 pb, caspase-6 cliva lamininas. Fosfatidilserina é exposta via TMEM16F. Blebs emergem pelo colapso da actina mediado por gelsolin e ROCK1.',
+   proteins:[{l:'CAD/DNAse',t:'e'},{l:'Caspase-6',t:'e'},{l:'Lamininas',t:'r'},{l:'Fosfatidilserina',t:'e'}],draw:'condensation'},
+  {label:'Fagocitose',title:'Fase 6 — Fagocitose pelo macrófago',
+   text:'Idêntico à via extrínseca. PS sinaliza "eat me". TAM, TIM-4 e MFG-E8 medeiam o reconhecimento. Digestão lisossomal dos corpos apoptóticos. Secreção de IL-10 e TGF-β reforça a tolerância imunológica.',
+   proteins:[{l:'Fosfatidilserina',t:'e'},{l:'TAM/TIM-4',t:'p'},{l:'MFG-E8',t:'p'},{l:'IL-10',t:'e'},{l:'TGF-β',t:'e'}],draw:'phago'}
+];
+
+let animVia='ext', animStage=0, animPlaying=false, animTimer=null;
+function getAStages(){ return animVia==='ext'?STAGES_EXT:STAGES_INT; }
+
+function animSetVia(v){
+  animVia=v; animStage=0; animStop();
+  document.querySelectorAll('.via-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&v==='ext')||(i===1&&v==='int')));
+  animRender();
+}
+
+function animBuildBar(){
+  const bar=document.getElementById('animStageBar');
+  bar.innerHTML='';
+  getAStages().forEach((s,i)=>{
+    const b=document.createElement('button');
+    b.className='s-btn'+(i===animStage?' active':'');
+    b.textContent=s.label;
+    b.onclick=()=>animGoTo(i);
+    bar.appendChild(b);
+  });
+}
+
+function animGoTo(i){
+  const st=getAStages();
+  animStage=Math.max(0,Math.min(st.length-1,i));
+  animRender();
+}
+
+function animRender(){
+  const st=getAStages(), s=st[animStage];
+  animBuildBar();
+  document.getElementById('animTitle').textContent=s.title;
+  document.getElementById('animText').textContent=s.text;
+  const pp=document.getElementById('animPills');
+  pp.innerHTML='';
+  (s.proteins||[]).forEach(p=>{
+    const el=document.createElement('span');
+    el.className='apill apill-'+p.t;
+    el.textContent=p.l;
+    pp.appendChild(el);
+  });
+  const pct=st.length>1?(animStage/(st.length-1)*100):0;
+  document.getElementById('animProgFill').style.width=pct+'%';
+  document.getElementById('animProgThumb').style.left=pct+'%';
+  document.getElementById('animStepLbl').textContent=(animStage+1)+' / '+st.length;
+  const scene=document.getElementById('animScene');
+  scene.innerHTML='';
+  DRAWS[s.draw](scene);
+}
+
+function animTogglePlay(){ animPlaying?animStop():animStart(); }
+function animStart(){
+  animPlaying=true;
+  document.getElementById('animPlayBtn').textContent='⏸ Pausar';
+  animAdvance();
+}
+function animStop(){
+  animPlaying=false;
+  document.getElementById('animPlayBtn').textContent='▶ Reproduzir';
+  if(animTimer) clearTimeout(animTimer);
+}
+function animAdvance(){
+  if(!animPlaying) return;
+  const st=getAStages();
+  if(animStage<st.length-1){ animStage++; animRender(); animTimer=setTimeout(animAdvance,2800); }
+  else animStop();
+}
+function animScrub(e){
+  const rect=document.getElementById('animProgWrap').getBoundingClientRect();
+  const pct=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  animGoTo(Math.round(pct*(getAStages().length-1)));
+}
+
+/* ── SVG helpers ── */
+function el(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const[k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function tx(txt,attrs,parent){ const e=el('text',attrs,parent); e.textContent=txt; return e; }
+function g(attrs,parent){ return el('g',attrs,parent); }
+
+function drawBaseCell(scene,opts={}){
+  const {shrink=1,nucStroke=TEAL,dimMembrane=false}=opts;
+  const rx=RX*shrink, ry=RY*shrink;
+  el('ellipse',{cx:CX,cy:CY,rx:rx+8,ry:ry+6,fill:'rgba(14,206,202,.06)'},scene);
+  el('ellipse',{cx:CX,cy:CY,rx,ry,fill:'url(#acellGrad)',stroke:dimMembrane?'rgba(14,206,202,.3)':TEAL,'stroke-width':dimMembrane?'1':'1.8'},scene);
+  el('ellipse',{cx:NCX,cy:NCY,rx:NRX*shrink,ry:NRY*shrink,fill:'url(#anucGrad)',stroke:nucStroke,'stroke-width':'1.3'},scene);
+}
+function drawMito(scene,x,y,rot=0,glow=false){
+  const grp=g({transform:`translate(${x},${y}) rotate(${rot})`},scene);
+  el('ellipse',{cx:0,cy:0,rx:22,ry:10,fill:'url(#amitoGrad)',stroke:GREEN,'stroke-width':'1.1'},grp);
+  if(glow) el('ellipse',{cx:0,cy:0,rx:26,ry:14,fill:'none',stroke:GREEN,'stroke-width':'2','stroke-opacity':'.35','style':'animation:apulse 1.4s ease-in-out infinite'},grp);
+  el('path',{d:'M-9,-1Q-4,-4 0,-1Q5,2 0,5Q-4,7 -9,4Z',fill:'none',stroke:GREEN,'stroke-width':'.8','stroke-opacity':'.55'},grp);
+}
+
+const DRAWS={
+  healthy(scene){
+    drawBaseCell(scene);
+    drawMito(scene,210,248,-20); drawMito(scene,415,140,15); drawMito(scene,390,260,30);
+    tx('Bcl-2',{x:210,y:265,'text-anchor':'middle','font-size':'9',fill:GREEN},scene);
+    tx('Núcleo',{x:NCX,y:NCY+4,'text-anchor':'middle','font-size':'10',fill:TEAL},scene);
+    tx('Receptor Fas (inativo)',{x:CX+RX+8,y:CY-25,'font-size':'9',fill:MUTED},scene);
+    tx('Citocromo c (retido)',{x:415,y:125,'text-anchor':'middle','font-size':'8.5',fill:'#4a8a62'},scene);
+    const bcl=g({},scene);
+    el('circle',{cx:CX+60,cy:CY-55,r:14,fill:'rgba(42,154,74,.12)',stroke:GREEN,'stroke-width':'1'},bcl);
+    tx('Bcl-xL',{x:CX+60,y:CY-51,'text-anchor':'middle','font-size':'8',fill:GREEN},bcl);
+  },
+  receptor(scene){
+    drawBaseCell(scene);
+    drawMito(scene,210,248,-20); drawMito(scene,415,140,15);
+    const recs=[{x:CX-RX,y:CY-25},{x:CX-RX+14,y:CY-65},{x:CX-RX+38,y:CY-95}];
+    recs.forEach(({x,y})=>{
+      el('circle',{cx:x,cy:y,r:8,fill:'rgba(43,127,212,.22)',stroke:BLUE,'stroke-width':'1.1'},scene);
+      tx('Fas',{x,y:y+4,'text-anchor':'middle','font-size':'7.5',fill:BLUE},scene);
+    });
+    const ligs=[{x:CX-RX-28,y:CY-45},{x:CX-RX-16,y:CY-85},{x:CX-RX+8,y:CY-122}];
+    ligs.forEach(({x,y},i)=>{
+      el('circle',{cx:x,cy:y,r:9,fill:'rgba(212,138,29,.25)',stroke:AMBER,'stroke-width':'1.1','style':'animation:adrift 2s ease infinite'},scene);
+      tx('FasL',{x,y:y+3,'text-anchor':'middle','font-size':'7.5',fill:AMBER},scene);
+      el('line',{x1:x+7,y1:y,x2:recs[i].x-7,y2:recs[i].y,stroke:'rgba(200,160,60,.4)','stroke-width':'1','stroke-dasharray':'3 2'},scene);
+    });
+    el('rect',{x:CX-RX-8,y:CY+10,width:66,height:24,rx:7,fill:'rgba(139,92,246,.18)',stroke:LAV,'stroke-width':'1.1'},scene);
+    tx('DISC+FADD',{x:CX-RX+25,y:CY+26,'text-anchor':'middle','font-size':'9',fill:LAV},scene);
+    tx('FasL (extracelular)',{x:CX+RX+8,y:CY-60,'font-size':'9',fill:AMBER},scene);
+    tx('Receptor Fas/CD95',{x:CX+RX+8,y:CY-35,'font-size':'9',fill:BLUE},scene);
+    tx('Complexo DISC',{x:CX+RX+8,y:CY+22,'font-size':'9',fill:LAV},scene);
+  },
+  casp8(scene){
+    drawBaseCell(scene);
+    drawMito(scene,210,248,-20); drawMito(scene,415,140,15);
+    el('rect',{x:CX-RX-8,y:CY-18,width:62,height:22,rx:7,fill:'rgba(139,92,246,.2)',stroke:LAV,'stroke-width':'1.1'},scene);
+    tx('DISC',{x:CX-RX+23,y:CY-3,'text-anchor':'middle','font-size':'9',fill:LAV},scene);
+    el('rect',{x:CX-RX+68,y:CY-18,width:76,height:22,rx:7,fill:'rgba(212,138,29,.22)',stroke:AMBER,'stroke-width':'1.3'},scene);
+    tx('Caspase-8 ✓',{x:CX-RX+106,y:CY-3,'text-anchor':'middle','font-size':'9','font-weight':'500',fill:AMBER},scene);
+    el('line',{x1:CX-RX+54,y1:CY-7,x2:CX-RX+68,y2:CY-7,stroke:AMBER,'stroke-width':'1.3','marker-end':'url(#anarr)'},scene);
+    el('circle',{cx:CX+30,cy:CY+75,r:14,fill:'rgba(14,206,202,.15)',stroke:TEAL,'stroke-width':'1'},scene);
+    tx('Bid',{x:CX+30,y:CY+79,'text-anchor':'middle','font-size':'9',fill:TEAL},scene);
+    el('circle',{cx:CX-55,cy:CY+75,r:14,fill:'rgba(212,138,29,.2)',stroke:AMBER,'stroke-width':'1.1','style':'animation:apulse 1.5s ease infinite'},scene);
+    tx('tBid',{x:CX-55,y:CY+79,'text-anchor':'middle','font-size':'9',fill:AMBER},scene);
+    el('line',{x1:CX+16,y1:CY+75,x2:CX-41,y2:CY+75,stroke:AMBER,'stroke-width':'1.1','stroke-dasharray':'3 2','marker-end':'url(#anarr)'},scene);
+    tx('amplifica via mito.',{x:CX-55,y:CY+95,'text-anchor':'middle','font-size':'7.5',fill:MUTED},scene);
+    tx('Caspase-8 (iniciadora)',{x:CX+RX+8,y:CY-15,'font-size':'9',fill:AMBER},scene);
+    tx('tBid → mitocôndria',{x:CX+RX+8,y:CY+50,'font-size':'9',fill:'#3da47e'},scene);
+  },
+  casp3(scene){
+    drawBaseCell(scene,{nucStroke:'rgba(80,100,180,.5)'});
+    drawMito(scene,210,248,-20); drawMito(scene,415,140,15);
+    const boxes=[
+      {x:CX-148,y:CY-75,w:74,h:22,lbl:'Caspase-8',col:AMBER},
+      {x:CX-52,y:CY-75,w:74,h:22,lbl:'Caspase-3★',col:RED},
+      {x:CX+44,y:CY-75,w:74,h:22,lbl:'Caspase-7',col:RED},
+    ];
+    boxes.forEach(({x,y,w,h,lbl,col})=>{
+      el('rect',{x,y,width:w,height:h,rx:7,fill:`rgba(${col===RED?'204,51,51':'212,138,29'},.2)`,stroke:col,'stroke-width':'1.2'},scene);
+      tx(lbl,{x:x+w/2,y:y+h/2+4,'text-anchor':'middle','font-size':'8.5','font-weight':'500',fill:col},scene);
+    });
+    el('line',{x1:CX-74,y1:CY-64,x2:CX-52,y2:CY-64,stroke:RED,'stroke-width':'1.3','marker-end':'url(#anarr)'},scene);
+    el('line',{x1:CX+22,y1:CY-64,x2:CX+44,y2:CY-64,stroke:RED,'stroke-width':'1.3','marker-end':'url(#anarr)'},scene);
+    const subs=[
+      {x:CX-130,y:CY+35,lbl:'PARP',sub:'reparo DNA ✗',col:RED},
+      {x:CX-38,y:CY+35,lbl:'ICAD',sub:'libera CAD',col:RED},
+      {x:CX+54,y:CY+35,lbl:'Lamininas',sub:'colapso nuc.',col:RED},
+    ];
+    subs.forEach(({x,y,lbl,sub,col})=>{
+      el('rect',{x,y,width:74,height:32,rx:6,fill:'rgba(204,51,51,.12)',stroke:col,'stroke-width':'1','stroke-dasharray':'2 2'},scene);
+      tx(lbl,{x:x+37,y:y+12,'text-anchor':'middle','font-size':'8.5','font-weight':'500',fill:col},scene);
+      tx(sub,{x:x+37,y:y+24,'text-anchor':'middle','font-size':'7.5',fill:'#aa7070'},scene);
+      el('line',{x1:CX,y1:CY-53,x2:x+37,y2:y,stroke:col,'stroke-width':'.8','stroke-opacity':'.4','stroke-dasharray':'2 3'},scene);
+    });
+    tx('Caspase-3: 600+ alvos',{x:CX+RX+8,y:CY-45,'font-size':'9',fill:RED},scene);
+    tx('PARP inativada',{x:CX+RX+8,y:CY+10,'font-size':'9',fill:RED},scene);
+  },
+  damage(scene){
+    drawBaseCell(scene);
+    drawMito(scene,210,248,-20,true); drawMito(scene,415,140,15,true);
+    for(let i=0;i<8;i++){
+      const a=i*(Math.PI*2/8);
+      el('line',{x1:NCX+Math.cos(a)*NRX,y1:NCY+Math.sin(a)*NRY,x2:NCX+Math.cos(a)*70,y2:NCY+Math.sin(a)*56,stroke:RED,'stroke-width':'1','stroke-opacity':'.65','stroke-dasharray':'2 3'},scene);
+    }
+    el('circle',{cx:CX+45,cy:CY-55,r:16,fill:'rgba(204,51,51,.15)',stroke:RED,'stroke-width':'1.2','style':'animation:apulse 1.5s ease infinite'},scene);
+    tx('p53',{x:CX+45,y:CY-55,'text-anchor':'middle','font-size':'10','font-weight':'500',fill:RED},scene);
+    tx('⚡ DNA',{x:NCX,y:NCY+3,'text-anchor':'middle','font-size':'9',fill:RED,'style':'animation:ablink 1.2s ease infinite'},scene);
+    const prots=[{x:CX-65,y:CY+65,lbl:'PUMA'},{x:CX+10,y:CY+72,lbl:'NOXA'},{x:CX-120,y:CY+55,lbl:'BAX'}];
+    prots.forEach(({x,y,lbl})=>{
+      el('circle',{cx:x,cy:y,r:13,fill:'rgba(204,51,51,.15)',stroke:RED,'stroke-width':'1','style':'animation:apulse 1.8s ease infinite'},scene);
+      tx(lbl,{x,y:y+4,'text-anchor':'middle','font-size':'8.5',fill:RED},scene);
+    });
+    tx('ATM/ATR ativados',{x:CX+RX+8,y:CY-50,'font-size':'9',fill:RED},scene);
+    tx('p53 estabilizado',{x:CX+RX+8,y:CY-25,'font-size':'9',fill:RED},scene);
+    tx('PUMA + NOXA + BAX',{x:CX+RX+8,y:CY+30,'font-size':'9',fill:'#cc5533'},scene);
+  },
+  momp(scene){
+    drawBaseCell(scene);
+    el('ellipse',{cx:210,cy:248,rx:28,ry:13,fill:'url(#amitoGrad)',stroke:GREEN,'stroke-width':'1.2'},scene);
+    el('ellipse',{cx:210,cy:248,rx:34,ry:19,fill:'none',stroke:RED,'stroke-width':'1.7','stroke-opacity':'.7','stroke-dasharray':'2 2','style':'animation:apulse 1s ease infinite'},scene);
+    tx('MOMP',{x:210,y:252,'text-anchor':'middle','font-size':'8.5',fill:RED},scene);
+    el('ellipse',{cx:415,cy:140,rx:24,ry:10,fill:'url(#amitoGrad)',stroke:GREEN,'stroke-width':'1'},scene);
+    el('ellipse',{cx:415,cy:140,rx:29,ry:15,fill:'none',stroke:RED,'stroke-width':'1.3','stroke-opacity':'.5','stroke-dasharray':'2 2','style':'animation:apulse 1.3s .2s ease infinite'},scene);
+    for(let i=0;i<4;i++){
+      const a=(i/4)*Math.PI-0.4;
+      const bx=210+Math.cos(a)*32, by=248+Math.sin(a)*15;
+      el('circle',{cx:bx,cy:by,r:5,fill:'rgba(43,127,212,.35)',stroke:BLUE,'stroke-width':'1','style':`animation:adrift ${1.4+i*0.2}s ${i*0.15}s ease infinite`},scene);
+      tx('Bax',{x:bx,y:by+4,'text-anchor':'middle','font-size':'6.5',fill:BLUE},scene);
+    }
+    el('circle',{cx:CX+65,cy:CY-45,r:15,fill:'rgba(204,51,51,.15)',stroke:RED,'stroke-width':'1.1'},scene);
+    tx('Bcl-2 ✗',{x:CX+65,y:CY-41,'text-anchor':'middle','font-size':'8.5',fill:'#aa5555'},scene);
+    tx('Bax/Bak formam poros',{x:CX+RX+8,y:CY-15,'font-size':'9',fill:RED},scene);
+    tx('Ponto de não retorno',{x:CX+RX+8,y:CY+10,'font-size':'9',fill:RED},scene);
+    tx('Bcl-2 neutralizado',{x:CX+RX+8,y:CY+35,'font-size':'9',fill:'#aa5555'},scene);
+  },
+  apoptosome(scene){
+    drawBaseCell(scene);
+    for(let i=0;i<7;i++){
+      const a=i*(Math.PI*2/7)+Math.cos(Date.now()/5000);
+      const bx=210+10+Math.cos(a)*20, by=248+Math.sin(a)*14;
+      el('circle',{cx:bx,cy:by,r:5,fill:'rgba(43,127,212,.38)',stroke:BLUE,'stroke-width':'1','style':`animation:adrift ${1.1+i*0.12}s ${i*0.08}s ease infinite`},scene);
+    }
+    tx('Citocromo c',{x:210,y:278,'text-anchor':'middle','font-size':'8.5',fill:BLUE},scene);
+    const apoX=CX+85, apoY=CY-18, apoR=30;
+    for(let i=0;i<7;i++){
+      const a=i*(Math.PI*2/7)-Math.PI/2;
+      el('circle',{cx:apoX+Math.cos(a)*apoR,cy:apoY+Math.sin(a)*apoR,r:9,fill:'rgba(14,206,202,.22)',stroke:TEAL,'stroke-width':'1.1'},scene);
+      tx('Apaf-1',{x:apoX+Math.cos(a)*apoR,y:apoY+Math.sin(a)*apoR+4,'text-anchor':'middle','font-size':'6',fill:TEAL},scene);
+    }
+    el('circle',{cx:apoX,cy:apoY,r:14,fill:'rgba(212,138,29,.22)',stroke:AMBER,'stroke-width':'1.3'},scene);
+    tx('Casp-9',{x:apoX,y:apoY+4,'text-anchor':'middle','font-size':'8.5',fill:AMBER},scene);
+    tx('Apoptossomo',{x:apoX,y:apoY+28,'text-anchor':'middle','font-size':'8.5',fill:TEAL},scene);
+    el('line',{x1:225,y1:248,x2:apoX-36,y2:apoY+18,stroke:BLUE,'stroke-width':'1.1','stroke-dasharray':'3 2','marker-end':'url(#anarr)'},scene);
+    tx('Apaf-1 + cit.c',{x:CX+RX+8,y:CY-40,'font-size':'9',fill:TEAL},scene);
+    tx('Apoptossomo (7-mer)',{x:CX+RX+8,y:CY-18,'font-size':'9',fill:TEAL},scene);
+    tx('Ativa Caspase-9',{x:CX+RX+8,y:CY+8,'font-size':'9',fill:AMBER},scene);
+  },
+  condensation(scene){
+    drawBaseCell(scene,{nucStroke:'rgba(80,100,180,.4)',dimMembrane:true});
+    for(let i=0;i<6;i++){
+      const a=i*(Math.PI*2/6);
+      el('ellipse',{cx:NCX+Math.cos(a)*(NRX-4),cy:NCY+Math.sin(a)*(NRY-4),rx:9+i,ry:6+i*0.7,fill:'rgba(204,51,51,.48)',stroke:RED,'stroke-width':'.7'},scene);
+    }
+    tx('DNA ~180 pb',{x:NCX,y:NCY+3,'text-anchor':'middle','font-size':'8.5',fill:RED},scene);
+    drawMito(scene,210,248,-20); drawMito(scene,415,140,15);
+    el('circle',{cx:CX+45,cy:CY-68,r:13,fill:'rgba(212,138,29,.2)',stroke:AMBER,'stroke-width':'1.1'},scene);
+    tx('CAD',{x:CX+45,y:CY-68,'text-anchor':'middle','font-size':'8.5',fill:AMBER},scene);
+    for(let i=0;i<5;i++){
+      const a=i/5*(Math.PI*2);
+      el('ellipse',{cx:CX-68+Math.cos(a)*36,cy:CY+52+Math.sin(a)*26,rx:6,ry:4,fill:'rgba(14,206,202,.22)',stroke:TEAL,'stroke-width':'.7'},scene);
+    }
+    tx('Blebs',{x:CX-68,y:CY+86,'text-anchor':'middle','font-size':'8.5',fill:TEAL},scene);
+    tx('CAD fragmenta DNA',{x:CX+RX+8,y:CY-45,'font-size':'9',fill:AMBER},scene);
+    tx('Lamininas clivadas',{x:CX+RX+8,y:CY-20,'font-size':'9',fill:RED},scene);
+    tx('Blebs de membrana',{x:CX+RX+8,y:CY+30,'font-size':'9',fill:TEAL},scene);
+  },
+  blebs(scene){
+    drawBaseCell(scene,{shrink:.85,dimMembrane:true});
+    const blebs=[{cx:CX-RX*.7,cy:CY-RY*.65,r:18},{cx:CX+RX*.55,cy:CY-RY*.75,r:15},{cx:CX+RX*.75,cy:CY+8,r:20},{cx:CX+RX*.35,cy:CY+RY*.8,r:16},{cx:CX-RX*.55,cy:CY+RY*.7,r:13}];
+    blebs.forEach(({cx,cy,r})=>{
+      el('circle',{cx,cy,r,fill:'rgba(14,206,202,.15)',stroke:TEAL,'stroke-width':'1.2'},scene);
+      for(let j=0;j<4;j++){
+        const a=j*(Math.PI*2/4);
+        el('circle',{cx:cx+Math.cos(a)*r*.45,cy:cy+Math.sin(a)*r*.45,r:2.5,fill:'rgba(46,232,154,.55)'},scene);
+      }
+    });
+    tx('"eat me" PS',{x:CX+RX*.75,y:CY+14,'text-anchor':'middle','font-size':'8',fill:'#3da47e'},scene);
+    for(let i=0;i<3;i++){
+      const a=i*(Math.PI*2/3);
+      el('circle',{cx:NCX+Math.cos(a)*20,cy:NCY+Math.sin(a)*15,r:12,fill:'rgba(20,30,60,.75)',stroke:'rgba(80,100,160,.5)','stroke-width':'1'},scene);
+    }
+    tx('Fosfatidilserina exposta',{x:CX+RX+8,y:CY-30,'font-size':'9',fill:'#3da47e'},scene);
+    tx('Sinal "eat me"',{x:CX+RX+8,y:CY,fill:'#3da47e','font-size':'9'},scene);
+    tx('Corpos apoptóticos',{x:CX+RX+8,y:CY+30,'font-size':'9',fill:TEAL},scene);
+  },
+  phago(scene){
+    const bodies=[{cx:CX-62,cy:CY-22,r:17},{cx:CX+52,cy:CY+28,r:15},{cx:CX+18,cy:CY-48,r:13},{cx:CX-32,cy:CY+52,r:11}];
+    bodies.forEach(({cx,cy,r})=>{
+      el('circle',{cx,cy,r,fill:'rgba(14,100,100,.22)',stroke:TEAL,'stroke-width':'1.2'},scene);
+      for(let j=0;j<3;j++){const a=j*(Math.PI*2/3);el('circle',{cx:cx+Math.cos(a)*r*.45,cy:cy+Math.sin(a)*r*.45,r:2.5,fill:'rgba(46,232,154,.45)'},scene);}
+      tx('PS',{x:cx,y:cy+4,'text-anchor':'middle','font-size':'8',fill:'#3da47e'},scene);
+    });
+    const mx=CX+108, my=CY-52;
+    el('path',{d:`M${mx-52} ${my}Q${mx-62} ${my-48}${mx-18} ${my-58}Q${mx+38} ${my-63}${mx+48} ${my-18}Q${mx+58} ${my+38}${mx+18} ${my+48}Q${mx-28} ${my+58}${mx-48} ${my+18}Z`,fill:'rgba(30,100,50,.22)',stroke:GREEN,'stroke-width':'1.3'},scene);
+    for(let p=0;p<4;p++){const pa=p*(Math.PI*2/4)-.8; el('line',{x1:mx+Math.cos(pa)*50,y1:my+Math.sin(pa)*44,x2:mx+Math.cos(pa)*68,y2:my+Math.sin(pa)*62,stroke:GREEN,'stroke-width':'2.2','stroke-linecap':'round'},scene);}
+    tx('Macrófago',{x:mx,y:my+3,'text-anchor':'middle','font-size':'10',fill:GREEN},scene);
+    [{lbl:'TAM',dx:-28,dy:-28},{lbl:'TIM-4',dx:8,dy:-38}].forEach(({lbl,dx,dy})=>{
+      el('circle',{cx:mx+dx,cy:my+dy,r:11,fill:'rgba(43,127,212,.18)',stroke:BLUE,'stroke-width':'1'},scene);
+      tx(lbl,{x:mx+dx,y:my+dy+4,'text-anchor':'middle','font-size':'7.5',fill:BLUE},scene);
+    });
+    el('rect',{x:CX-RX+10,y:CY+80,width:110,height:22,rx:10,fill:'rgba(42,154,74,.12)',stroke:GREEN,'stroke-width':'1'},scene);
+    tx('✓ Sem inflamação',{x:CX-RX+65,y:CY+95,'text-anchor':'middle','font-size':'9.5',fill:GREEN},scene);
+    el('line',{x1:CX-62,y1:CY-39,x2:mx-48,y2:my+8,stroke:'rgba(14,206,202,.45)','stroke-width':'1.1','stroke-dasharray':'3 2','marker-end':'url(#anarr)'},scene);
+    el('line',{x1:CX+52,y1:CY+13,x2:mx+28,y2:my+38,stroke:'rgba(14,206,202,.45)','stroke-width':'1.1','stroke-dasharray':'3 2','marker-end':'url(#anarr)'},scene);
+    tx('Receptores TAM/TIM-4',{x:CX+RX+8,y:CY-75,'font-size':'9',fill:BLUE},scene);
+    tx('MFG-E8 bridge mol.',{x:CX+RX+8,y:CY-50,'font-size':'9',fill:BLUE},scene);
+    tx('Digestão lisossomal',{x:CX+RX+8,y:CY-22,'font-size':'9',fill:GREEN},scene);
+  }
+};
+
+window.animSetVia=animSetVia;
+window.animGoTo=animGoTo;
+window.animTogglePlay=animTogglePlay;
+window.animScrub=animScrub;
+animRender();
+})();
+
+/* ── SCROLL REVEAL ── */
+const revealEls = document.querySelectorAll('.reveal');
+const observer  = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+revealEls.forEach(el => observer.observe(el));
+
+/* ── NAV DOTS ── */
+const sections = ['sec0','sec1','sec2','sec-anim','sec3','sec4','sec5'].map(id => document.getElementById(id));
+const dots     = document.querySelectorAll('.nav-dot');
+
+dots.forEach(d => {
+  d.addEventListener('click', () => {
+    const sec = sections[+d.dataset.sec];
+    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+const secObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const idx = sections.indexOf(e.target);
+      dots.forEach((d,i) => d.classList.toggle('active', i === idx));
+    }
+  });
+}, { threshold: 0.4 });
+sections.forEach(s => s && secObserver.observe(s));
+</script>
+</body>
+</html>
